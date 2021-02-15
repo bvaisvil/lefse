@@ -2,6 +2,9 @@
 
 import os,sys,matplotlib,argparse,string
 matplotlib.use('Agg')
+matplotlib.interactive(False)
+import matplotlib.style as mplstyle
+mplstyle.use('fast')
 from pylab import *
 from lefse import *
 import numpy as np
@@ -289,10 +292,10 @@ def draw_tree(out_file,tree,params):
         seps = [params['clade_sep']*sep/(float(depth-i+1)*0.25) for i in range(1,len(tree['nlev'])+1)]
         totseps = sum([s*nlev[i] for i,s in enumerate(seps[:-1])])
     if clade_sep_err: print('clade_sep parameter too large, lowered to',params['clade_sep'])
-
-    fig = plt.figure(edgecolor=params['back_color'],facecolor=params['back_color'])
+    #plt.rcParams['svg.fonttype'] = 'none'
+    fig = plt.figure(edgecolor=params['back_color'], facecolor=params['back_color'])
     ax = fig.add_subplot(111, polar=True, frame_on=False, facecolor=params['back_color'] )
-    plt.subplots_adjust(right=1.0-params['r_prop'],left=params['l_prop'])     
+    #plt.subplots_adjust(right=1.0-params['r_prop'],left=params['l_prop'])
     ax.grid(False)
     xticks([])
     yticks([])
@@ -312,8 +315,17 @@ def draw_tree(out_file,tree,params):
             return hasattr(x, 'set_color') and not hasattr(x, 'set_facecolor')
 
     h, l = ax.get_legend_handles_labels()
+
+    figure_height = ((float(params['class_legend_font_size']) * (len(l)))/72)
+    longest_label = len(max(l, key=len))
+    size = fig.get_size_inches()
+    ncols = 1
+    if size[1] < figure_height:
+        ncols = int(ceil(figure_height / float(size[1])))
+    fig.set_size_inches([13 + ncols, 12])
+
     if len(l) > 0:
-        leg = ax.legend(bbox_to_anchor=(1.05, 1), frameon=False, loc=2, borderaxespad=0.,prop={'size':params['label_font_size']})
+        leg = ax.legend(bbox_to_anchor=(1,1), ncol=ncols, frameon=False, loc=2, borderaxespad=0.,prop={'size':params['label_font_size']})
         if leg != None:
             gca().add_artist(leg)
             for o in leg.findobj(get_col_attr):
@@ -325,13 +337,14 @@ def draw_tree(out_file,tree,params):
 
     ax.set_title(params['title'],size=params['title_font_size'],color=params['fore_color'])
 
+
     if params['class_legend_vis']:
-        l2 = legend(nll, cl, loc=2, prop={'size':params['class_legend_font_size']}, frameon=False)
+        l2 = legend(nll, cl, bbox_to_anchor=(0,.85), loc=10, prop={'size':params['class_legend_font_size']}, frameon=False)
         if l2 != None:
             for o in l2.findobj(get_col_attr):
                     o.set_color(params['fore_color'])
-
-    plt.savefig(out_file,format=params['format'],facecolor=params['back_color'],edgecolor=params['fore_color'],dpi=params['dpi'])
+    print("Saving figure...")
+    plt.savefig(out_file, format=params['format'], facecolor=params['back_color'],edgecolor=params['fore_color'], dpi=params['dpi'])
     plt.close()    
 
 if __name__ == '__main__':
